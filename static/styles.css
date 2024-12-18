@@ -1,0 +1,28 @@
+body{
+    background-color: #032a42;
+    margin: auto;
+    color: #ffffff;
+}
+button{
+    background-color: #1b0c50;
+    color:#ffffff;
+    cursor: pointer;
+    padding:10px;
+    width: auto;
+    height: auto;
+}
+form{
+    padding:50px;
+    margin-top: 10px;
+    border: 1px solid #274472;
+    border-radius: 2%;
+    background-color: #d8c4b6;
+    color: #032a42;
+    width: 350px;
+    margin: 0 auto;
+    
+}
+
+#expense_id{
+    display: none;
+}

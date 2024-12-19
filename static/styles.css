@@ -1,7 +1,11 @@
 body{
-    background-color: #032a42;
-    margin: auto;
-    color: #ffffff;
+    
+    margin: auto 0;
+    color: #000000;
+    display: grid;
+    place-items: center;
+    padding:2%;
+    
 }
 button{
     background-color: #1b0c50;
@@ -11,7 +15,16 @@ button{
     width: auto;
     height: auto;
 }
-form{
+
+.feature_buttons{
+    margin: 10%;
+    display: flex;
+    justify-content: center;
+    background-color: antiquewhite;
+    width:90%;
+    height:auto;
+}
+#add_expense{
     padding:50px;
     margin-top: 10px;
     border: 1px solid #274472;
@@ -20,9 +33,17 @@ form{
     color: #032a42;
     width: 350px;
     margin: 0 auto;
+    display: none;
     
 }
 
-#expense_id{
-    display: none;
+table{
+    width:  90%;
+    border: #ffffff solid 2px;
+    background-color: #3E5879;
+}
+
+table th, table td{
+    min-width: 100px;
+    text-align: center;
 }

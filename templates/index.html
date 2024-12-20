@@ -5,21 +5,25 @@
 
         <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
         <script src="{{ url_for('static', filename='script.js') }}"></script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
+        <header> <h1 id="header_text"> UNIFIED FAMILY FINANCE TRACKER</h1></header>
          <div class="feature_buttons">
             <button onclick=" document.getElementById('add_expense').style.display='block' "> Add Expense</button>
-            <button onclick="#"> Overview </button>
-            <button onclick="#"> Sort and Filter </button>
+            <button onclick=""> Overview </button>
+            <button onclick=""> Sort and Filter </button>
          </div>
          <div class="body">
             <!-- ####### ADD EXPENSE FORM #######-->
             <div class="add_expense_form">
                 <!-- #############  START OF THE FORM ###############-->
-                <form id="add_expense" method="POST" action="/get_form_data" style="display: none;">
+                <form id="add_expense" method="POST" action="/get_form_data" enctype="multipart/form-data" style="display: none;">
+
                     
                     <!-- ######### User_ID #######-->
                     <label for="user_ID" name="user_id">User_ID</label>
@@ -89,11 +93,13 @@
                     <input type="text" id="desc" name="desc"><br><br>
 
                     <!--############## FILE UPLOAD ############# -->
-                    <label for="receipt">Receipt: </label>
+                    <label for="receipt" name="receipt"> Receipt: </label>
                     <input type="file" id="file" name="file" accept="image/*,application/pdf"><br><br>  
 
-                    <!-- ########### SUBMIT BUTOTN ##########-->
+                    <!-- ########### SUBMIT BUTTON ##########-->
                     <button type="submit">ADD EXPENSE</button>
+
+                    <button type="button" onclick="document.getElementById('add_expense').style.display='none'">CANCEL</button>
                 </form>
             </div>
             <!-- ###### DEFAULT VIEW OF THE TABLE #####-->
@@ -123,19 +129,28 @@
                         <div class="exp_id" style="display:none">{{ expense.expense_id}}</div>
                         <tr>                    
                              <td>
-                                <form id="edit_button" method="GET" action="/edit_expense/{{ expense.id }}">
-                                    <button type="submit"> EDIT </button>
-                                </form>
+                                <i class="fas fa-edit"></i>                                
                             </td>
                             <td>{{expense.date_in}}</td>                    
                             <td>{{expense.category}}</td>
                             <td>{{expense.amount}}</td>
                             <td>{{expense.desc}}</td>
-                            <td>{{expense.receipt}}</td>
                             <td>
-                                <form  id="delete_button" method="POST" action="{{ url_for('delete_expense',expense_id=expense.expense_id)}}" >
-                                    <button type="submit"> DEL </button>
-                                </form>
+                                {% if expense.receipt %}
+                                <a href="{{ url_for('static', filename='uploads/receipts/' + expense.receipt) }}" target="_blank">
+                                    View Receipt
+                                </a>
+                                {% else %}
+                                No Receipt
+                                {% endif %}
+                            </td>
+                            <td>
+                                
+                                    <a href="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" class="icon-button" title="Delete">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                
+                                
                             </td>
                         </tr>
                         {% endfor %}

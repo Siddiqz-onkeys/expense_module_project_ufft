@@ -113,7 +113,7 @@
 
                                 <th>Date</th>     
 
-                                <th>category</th>
+                                <th>Category</th>
                                 
                                 <th>Amount</th>
                                 
@@ -134,21 +134,29 @@
                             <td>{{expense.date_in}}</td>                    
                             <td>{{expense.category}}</td>
                             <td>{{expense.amount}}</td>
-                            <td>{{expense.desc}}</td>
+                            <td>
+                                {% if expense.desc %}
+                                    {{expense.desc}}
+                                {% else %}
+                                ## No Description ##
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if expense.receipt %}
                                 <a href="{{ url_for('static', filename='uploads/receipts/' + expense.receipt) }}" target="_blank">
                                     View Receipt
                                 </a>
                                 {% else %}
-                                No Receipt
+                                ## No Receipt ##
                                 {% endif %}
                             </td>
                             <td>
                                 
-                                    <a href="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" class="icon-button" title="Delete">
-                                        <i class="fa fa-trash"></i>
-                                    </a>
+                                <form method="POST" action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}">
+                                    <button class="delete_btn">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                                 
                                 
                             </td>

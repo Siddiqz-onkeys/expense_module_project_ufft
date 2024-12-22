@@ -51,7 +51,7 @@ def index():
             'category':exp[2],            
             'amount':exp[3],
             'desc':exp[4],
-            'file':exp[5]            
+            'receipt':exp[5]            
         }
         for exp in expenses
     ]
@@ -92,16 +92,19 @@ def get_form_data():
     if receipt_file:
         receipt_filename = secure_filename(receipt_file.filename)
         receipt_file.save(os.path.join(app.config['UPLOAD_FOLDER'], receipt_filename))
+        receipt = receipt_filename
     
     # Add the expense to the database
-    add_expense(user_id, family_id, category_id, amount, date_in, description, receipt_filename)
+    add_expense(user_id, family_id, category_id, amount, date_in, description, receipt)
     
     return redirect(url_for('index')) ##### this returns a success message 
-####### ADD EXPENSE 
 
-def add_expense(user_id,family_id,category_id,amount,date_in,description,receipt_filename):
+
+####### ADD EXPENSE ###########
+
+def add_expense(user_id,family_id,category_id,amount,date_in,description,receipt):
    
-    cursor.execute("INSERT INTO EXPENSES (user_id,category_id,date,amount,description,family_id,receipt) VALUES (%s,%s,%s,%s,%s,%s,%s)",(user_id,category_id,date_in,amount,description,family_id,receipt_filename,))
+    cursor.execute("INSERT INTO EXPENSES (user_id,category_id,date,amount,description,family_id,receipt) VALUES (%s,%s,%s,%s,%s,%s,%s)",(user_id,category_id,date_in,amount,description,family_id,receipt,))
     connect_.commit() #reflects in our database
    
 ########## to delete the expense #######

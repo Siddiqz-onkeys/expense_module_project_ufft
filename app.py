@@ -92,6 +92,7 @@ def get_form_data():
     # Handle the receipt file upload
     receipt_file = request.files['file']
     receipt_filename = None
+    receipt=""
     if receipt_file:
         receipt_filename = secure_filename(receipt_file.filename)
         receipt_file.save(os.path.join(app.config['UPLOAD_FOLDER'], receipt_filename))

@@ -49,7 +49,7 @@ def index():
         }
         for exp in expenses
     ]
-    return render_template('index.html', expenses=expense_records,max_date=current_date) #Flask by default looks for templkate forlder to render the html file
+    return render_template('index.html', expenses=expense_records, max_date=current_date) #Flask by default looks for templkate forlder to render the html file
 
 
 ########## SAVING THE UPLOADED FILES IN A FOLDER ############
@@ -187,6 +187,99 @@ def add_amount(expense_id):
     cursor.execute("UPDATE expenses SET amount=%s WHERE expense_id=%s",(sum,expense_id,))
     connect_.commit()
     return redirect(url_for('index'))
+
+
+@app.route('/sort_expenses', methods=["GET"])
+def sort_expenses():
+    sort_by = request.form.get('sort_by')  # Get sorting criterion from the frontend ('amount' or 'date')
+    sort_order = request.form.get('sort_order')  # Get sorting order ('asc' or 'desc')
+    
+    if sort_by not in ['amount', 'date']:
+        sort_by = 'date'  # Default to 'date' if invalid input is provided
+
+    if sort_order not in ['asc', 'desc']:
+        sort_order = 'asc'  # Default to ascending if invalid input is provided
+
+    query = f"SELECT * FROM expenses ORDER BY {sort_by} {sort_order.upper()}"
+    cursor.execute(query)
+    sorted_expenses = cursor.fetchall()
+    
+    # Return the sorted expenses data for rendering on the frontend
+    return render_template('index.html', expenses=sorted_expenses)
+
+@app.route('/filter_expenses', methods=["GET"])
+def filter_expenses():
+    min_amount = request.args.get('filter_amount_range_min')  # Minimum amount input from the frontend
+    max_amount = request.args.get('filter_amount_range_max')  # Maximum amount input from the frontend
+    category = request.args.get('filter_category')  # Category input from the frontend
+    print("called")
+
+    # Initialize base query and parameters
+    query = "SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id WHERE "
+    params = []
+
+    # Filter by amount range if both min and max values are provided and also category
+    if min_amount and max_amount and category:
+        query=query+"c.name=%s AND e.amount BETWEEN %s AND %s "
+        params+=[category,min_amount,max_amount]
+
+    # Filter by category if a valid category is provided but not min and max
+    elif category and not max_amount and not min_amount:
+        query=query+" LOWER(c.name) = %s"
+        params.append(category.lower())
+    
+    #category and min value is given
+    elif category and min_amount and not max_amount:
+        query+="c.name=%s AND e.amount>=%s"
+        params+=([category.lower(),min_amount])
+    
+    #max and min given but not category
+    elif max_amount and  min_amount and not category:
+        query+="e.amount BETWEEN %s AND %s"
+        params+=([min_amount,max_amount])
+    
+    # only min amount
+    elif min_amount and not max_amount and not category:
+        query+="e.amount<=%s"
+        params+=([min_amount])
+    
+    #only max amount
+    elif max_amount and not max_amount and not category:
+        query+="e.amount>=%s"
+        params+=([max_amount])
+
+    #category and min amount
+    else:
+        query+="c.name=%s AND e.amount<=%s"
+        params+=([category.lower(),max_amount])
+
+    
+    
+    
+    cursor.execute(query, tuple(params))
+    filtered_expenses = cursor.fetchall()
+    
+    filtered_expenses_list=[
+        {
+            'expense_id':exp[0],
+            'date_in':exp[1],
+            'category':exp[2],            
+            'amount':exp[3],
+            'desc':exp[4],
+            'receipt':exp[5]            
+        }
+        for exp in filtered_expenses
+    ]
+    
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    return render_template('index.html', expenses=filtered_expenses_list, max_date=current_date)
+
+###### route to reset the view ########
+@app.route('/reset_filters')
+def reset_filters():
+    # Redirect to the root route, where the unfiltered data is displayed
+    return redirect('/')
+
 
 
 if __name__=="__main__":

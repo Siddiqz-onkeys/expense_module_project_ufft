@@ -66,7 +66,7 @@ button:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-#add_expense , #edit_expense{
+#add_expense , #edit_expense, #sorting_filtering{
     padding: 50px;
     margin-top: 10px;
     border: 1px solid #274472;
@@ -150,3 +150,4 @@ a:hover {
     color: #274472;
     text-decoration: underline;
 }
+

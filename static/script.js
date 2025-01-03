@@ -34,3 +34,52 @@ function close_menu(){
     document.getElementById('edit_menu').style.display='none';
 }
 
+let originalOrder = []; // Stores the default order of rows.
+
+function sortTable(columnIndex, header) {
+    const table = document.querySelector("table tbody");
+    const rows = Array.from(table.rows);
+
+    // Save original order only once
+    if (originalOrder.length === 0) {
+        originalOrder = rows.map(row => row.cloneNode(true));
+    }
+
+    // Get current sort order from the header
+    const currentOrder = header.getAttribute("data-sort-order");
+    let newOrder;
+
+    if (currentOrder === "none" || currentOrder === "desc") {
+        // Sort in ascending order
+        newOrder = rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex].innerText.trim();
+            const cellB = rowB.cells[columnIndex].innerText.trim();
+            return isNaN(cellA) ? cellA.localeCompare(cellB) : parseFloat(cellA) - parseFloat(cellB);
+        });
+        header.setAttribute("data-sort-order", "asc");
+    } else if (currentOrder === "asc") {
+        // Sort in descending order
+        newOrder = rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex].innerText.trim();
+            const cellB = rowB.cells[columnIndex].innerText.trim();
+            return isNaN(cellA) ? cellB.localeCompare(cellA) : parseFloat(cellB) - parseFloat(cellA);
+        });
+        header.setAttribute("data-sort-order", "desc");
+    } else {
+        // Restore to default order
+        newOrder = originalOrder;
+        header.setAttribute("data-sort-order", "none");
+    }
+
+    // Clear the table and append the sorted rows
+    table.innerHTML = "";
+    newOrder.forEach(row => table.appendChild(row));
+
+    // Reset other headers' sort order
+    document.querySelectorAll("thead th").forEach(th => {
+        if (th !== header) {
+            th.setAttribute("data-sort-order", "none");
+        }
+    });
+}
+

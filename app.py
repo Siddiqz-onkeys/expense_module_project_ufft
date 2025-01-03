@@ -11,6 +11,11 @@ app=Flask(__name__)
 ########## DEFINING A PATH TO SAVE THE UPLOADED FILES ##########
 UPLOAD_FOLDER = 'static/uploads/receipts'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+sort_order={'date':'default',
+            'name':'default',
+            'amount':'default',
+            'description':'default',
+            'receipt':'default'}
 
 
 #configuring the connection with the database
@@ -33,6 +38,7 @@ cursor=connect_.cursor()
 @app.route('/') #creates a root route for the flask application
  #index function that returnrs the HTML content from the file and sends it to the user as a response for accessing the root URL
 def index():
+    
     current_date = datetime.now().strftime('%Y-%m-%d')
     
     cursor.execute("SELECT expense_id,date,name,amount,description,receipt FROM expenses e1 JOIN categories c1 where e1.category_id=c1.category_id ORDER BY expense_id DESC")
@@ -49,6 +55,7 @@ def index():
         }
         for exp in expenses
     ]
+    
     return render_template('index.html', expenses=expense_records, max_date=current_date) #Flask by default looks for templkate forlder to render the html file
 
 
@@ -191,11 +198,11 @@ def add_amount(expense_id):
 
 @app.route('/sort_expenses', methods=["GET"])
 def sort_expenses():
-    sort_by = request.form.get('sort_by')  # Get sorting criterion from the frontend ('amount' or 'date')
+    sort_by = request.form.get('sort_by')  # Get sorting criterion from the frontend ('amount' or sort_by)
     sort_order = request.form.get('sort_order')  # Get sorting order ('asc' or 'desc')
     
-    if sort_by not in ['amount', 'date']:
-        sort_by = 'date'  # Default to 'date' if invalid input is provided
+    if sort_by not in ['amount', sort_by]:
+        sort_by = sort_by  # Default to sort_by if invalid input is provided
 
     if sort_order not in ['asc', 'desc']:
         sort_order = 'asc'  # Default to ascending if invalid input is provided
@@ -212,7 +219,7 @@ def filter_expenses():
     min_amount = request.args.get('filter_amount_range_min')  # Minimum amount input from the frontend
     max_amount = request.args.get('filter_amount_range_max')  # Maximum amount input from the frontend
     category = request.args.get('filter_category')  # Category input from the frontend
-    print("called")
+   
 
     # Initialize base query and parameters
     query = "SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id WHERE "
@@ -254,8 +261,6 @@ def filter_expenses():
         params+=([category.lower(),max_amount])
 
     
-    
-    
     cursor.execute(query, tuple(params))
     filtered_expenses = cursor.fetchall()
     
@@ -281,6 +286,40 @@ def reset_filters():
     return redirect('/')
 
 
+###### Sorting function ##
+@app.route('/sort_table/<sort_by>')
+def sort_table(sort_by):
+    query="SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id"
+    print(sort_by,sort_order[sort_by])
+    if sort_order[sort_by]=="default":
+        sort_order[sort_by]='asc'
+        query+=" ORDER BY %s ASC"
+    
+    elif sort_order[sort_by]=='asc':
+        sort_order[sort_by]='desc'
+        query+=" ORDER BY %s DESC"
+    else:
+        sort_order[sort_by]='default'
+        return redirect('/')
+        
+    cursor.execute(query,(sort_by,))
+    sorted_expenses=cursor.fetchall() 
+    cursor.reset()
+    expenses = [
+        {
+            'expense_id': exp[0],
+            'date_in': exp[1],
+            'category': exp[2],
+            'amount': exp[3],
+            'desc': exp[4],
+            'receipt': exp[5],
+        }
+        for exp in sorted_expenses
+    ]
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    
+    return render_template('index.html', expenses=expenses, max_date=current_date)
+        
 
 if __name__=="__main__":
     app.run(debug=True)

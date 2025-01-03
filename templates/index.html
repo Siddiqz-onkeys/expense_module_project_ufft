@@ -18,7 +18,7 @@
          <div class="feature_buttons">
             <button onclick=" document.getElementById('add_expense').style.display='block' "> Add Expense</button>
             <button onclick=""> Overview </button>
-            <button onclick=" document.getElementById('sorting_filtering').style.display='block' "> Sort and Filter </button>
+            <button onclick=" document.getElementById('sorting_filtering').style.display='block' "> Filters </button>
          </div>
 
          <div class="body">
@@ -204,29 +204,7 @@
             <!-- ####### SORTING AND FILTERING FORM #######-->        
             <div class="sorting_filtering_form">
                 <form id="sorting_filtering" method="GET" action="/filter_expenses" enctype="multipart/form-data" style="display: none;">
-                    <!-- ########### Sorting Options ########### -->
-                    <div class="sorting_options">
-                        <h3>Sort By:</h3>
-
-                        <!-- Sorting by Amount or Date -->
-                        <label for="sort_by">Sort by:</label>
-                        <select id="sort_by" name="sort_by">
-                            <option value="" disabled selected>Select an Option</option>
-                            <option value="amount">Amount</option>
-                            <option value="date">Date</option>
-                        </select>
-                        <br><br>
-
-                        <!-- Sorting Order (Ascending/Descending) -->
-                        <label for="sort_order">Sort in:</label>
-                        <select id="sort_order" name="sort_order">
-                            <option value="" disabled selected>Select an Option</option>
-                            <option value="asc">Ascending</option>
-                            <option value="desc">Descending</option>
-                        </select>
-                        <br><br>
-                    </div>
-
+                    
                     <!-- ########### Filtering Options ########### -->
                     <div class="filtering_options">
                         <h3>Filter By:</h3>

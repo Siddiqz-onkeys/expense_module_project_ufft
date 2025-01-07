@@ -41,7 +41,7 @@ def index():
     
     current_date = datetime.now().strftime('%Y-%m-%d')
     
-    cursor.execute("SELECT expense_id,date,name,amount,description,receipt FROM expenses e1 JOIN categories c1 where e1.category_id=c1.category_id ORDER BY expense_id DESC")
+    cursor.execute("SELECT expense_id,date,name,amount,description,receipt,user_id FROM expenses e1 JOIN categories c1 where e1.category_id=c1.category_id ORDER BY expense_id DESC")
     expenses=cursor.fetchall()
     
     expense_records=[
@@ -51,7 +51,8 @@ def index():
             'category':exp[2],            
             'amount':exp[3],
             'desc':exp[4],
-            'receipt':exp[5]            
+            'receipt':exp[5],
+            'user_id':exp[6]           
         }
         for exp in expenses
     ]
@@ -112,14 +113,48 @@ def get_form_data():
 
 
 ####### ADD EXPENSE ###########
-def add_expense(user_id,family_id,category_id,amount,date_in,description,receipt):
+def add_expense(user_id, family_id, category_id, amount, date_in, description="", receipt=""):
+    # Start constructing the query
+    query = "INSERT INTO EXPENSES (user_id, category_id, date, amount, family_id"
+    params = [user_id, category_id, date_in, amount, family_id]
+    
+    # Dynamically add optional columns
+    if description:
+        query += ", description"
+        params.append(description)
+    if receipt:
+        query += ", receipt"
+        params.append(receipt)
+    
+    # Close the column list and prepare placeholders
+    values = ', '.join(['%s'] * len(params))
+    query += f") VALUES ({values})"
+    
+    # Execute the query
+    cursor.execute(query, tuple(params))
+    connect_.commit()
+
    
-    cursor.execute("INSERT INTO EXPENSES (user_id,category_id,date,amount,description,family_id,receipt) VALUES (%s,%s,%s,%s,%s,%s,%s)",(user_id,category_id,date_in,amount,description,family_id,receipt,))
-    connect_.commit() #reflects in our database
-   
+ 
+ ######### AGE VERIFICATION ############
+
+
+@app.route('/verify_major/<int:user_id>',methods=["GET"])
+def verify_major(user_id):
+    cursor.execute("SELECT dob FROM users WHERE user_id=%s",(user_id,))
+    dob=cursor.fetchone()[0]
+    current_day=datetime.today()
+    
+    age=abs(dob.year-current_day.year)
+    if (current_day.month, current_day.day) < (dob.month, dob.day):
+        age -= 1
+    
+    is_major = age > 18
+    return jsonify({"is_major": is_major})           
+ 
    
 ########## DELETE EXPENSE  #######
-@app.route('/delete_expense/<int:expense_id>',methods=["POST"])
+@app.route('/delete_expense/<int:expense_id>',methods=["GET"])
 def delete_expense(expense_id):
     cursor.execute("DELETE FROM expenses WHERE expense_id=%s",(expense_id,))
     connect_.commit()
@@ -219,11 +254,26 @@ def filter_expenses():
     min_amount = request.args.get('filter_amount_range_min')  # Minimum amount input from the frontend
     max_amount = request.args.get('filter_amount_range_max')  # Maximum amount input from the frontend
     category = request.args.get('filter_category')  # Category input from the frontend
-   
+    desc=request.args.get('description') # Description
+    receipt=request.args.get('receipt') #receipt   
 
     # Initialize base query and parameters
     query = "SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id WHERE "
     params = []
+    
+    if category:
+        query+="c.name=%s "
+        params+=[category]
+    if min_amount and max_amount:
+        query+="e.amount BETWEEN %s AND %s "
+        params+=[min_amount,max_amount]
+    elif min_amount:
+        query+="e.amount>=%s "
+        params+=[min_amount]
+    elif max_amount:
+        query+="e.amount<%s "
+        params+=[max_amount]
+    
 
     # Filter by amount range if both min and max values are provided and also category
     if min_amount and max_amount and category:
@@ -256,9 +306,15 @@ def filter_expenses():
         params+=([max_amount])
 
     #category and min amount
-    else:
+    elif category and max_amount and not min_amount:
         query+="c.name=%s AND e.amount<=%s"
         params+=([category.lower(),max_amount])
+        
+    if desc:
+        query+="e.description IS NOT NULL"
+    if receipt:
+        query+="e.receipt IS NOT NULL"
+        
 
     
     cursor.execute(query, tuple(params))

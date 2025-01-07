@@ -1,5 +1,6 @@
 var id=0;
 var amount=0;
+var major;
 function showEditMenu(expense_id,expense_amount){
     document.getElementById('edit_menu').style.display='block';
 
@@ -82,4 +83,51 @@ function sortTable(columnIndex, header) {
         }
     });
 }
+let del_id = 0;
 
+function verify_age(user_id, expense_id) {
+    fetch(`/verify_major/${user_id}`) // Use the correct endpoint
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json(); // Parse the JSON response
+        })
+        .then(data => {
+            const ageMessage = document.getElementById("ageMessage");
+            const deleteConfirmationSection = document.getElementById("deleteConfirmationSection");
+            if (data.is_major) {
+                deleteConfirmationSection.style.display = "block"; // Show confirmation dialog
+                del_id = expense_id; // Set global variable
+            } else {
+                ageMessage.style.display = "block";
+                ageMessage.style.animation = "none"; // Reset animation
+                void ageMessage.offsetWidth; // Trigger reflow
+                ageMessage.style.animation = "showHide 1.5s ease-in-out";
+            }
+        })
+        .catch(error => console.error("Error:", error));
+}
+
+function deletion(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    const form = document.getElementById('deleteConfirmationSection');
+    form.action = `/delete_expense/${del_id}`; // Dynamically set the form action
+
+    const deleteMessage = document.getElementById("deleteMessage");
+    deleteMessage.style.display = "block";
+    deleteMessage.style.animation = "none"; // Reset animation
+    void deleteMessage.offsetWidth; // Trigger reflow
+    deleteMessage.style.animation = "showHide 1.5s ease-in-out";
+
+    // Optionally, delay the actual submission to allow the animation to play
+    setTimeout(() => {
+        form.submit(); // Submit the form after the animation
+    }, -3500); // Adjust delay to match animation duration
+}
+
+
+function close_delete(){
+    document.getElementById('deleteConfirmationSection').style.display='none';
+}

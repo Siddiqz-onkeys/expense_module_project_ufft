@@ -231,23 +231,7 @@ def add_amount(expense_id):
     return redirect(url_for('index'))
 
 
-@app.route('/sort_expenses', methods=["GET"])
-def sort_expenses():
-    sort_by = request.form.get('sort_by')  # Get sorting criterion from the frontend ('amount' or sort_by)
-    sort_order = request.form.get('sort_order')  # Get sorting order ('asc' or 'desc')
-    
-    if sort_by not in ['amount', sort_by]:
-        sort_by = sort_by  # Default to sort_by if invalid input is provided
 
-    if sort_order not in ['asc', 'desc']:
-        sort_order = 'asc'  # Default to ascending if invalid input is provided
-
-    query = f"SELECT * FROM expenses ORDER BY {sort_by} {sort_order.upper()}"
-    cursor.execute(query)
-    sorted_expenses = cursor.fetchall()
-    
-    # Return the sorted expenses data for rendering on the frontend
-    return render_template('index.html', expenses=sorted_expenses)
 
 @app.route('/filter_expenses', methods=["GET"])
 def filter_expenses():
@@ -262,61 +246,25 @@ def filter_expenses():
     params = []
     
     if category:
-        query+="c.name=%s "
+        query+="c.name=%s AND"
         params+=[category]
     if min_amount and max_amount:
-        query+="e.amount BETWEEN %s AND %s "
+        query+=" e.amount BETWEEN %s AND %s AND"
         params+=[min_amount,max_amount]
     elif min_amount:
-        query+="e.amount>=%s "
+        query+=" e.amount>=%s AND"
         params+=[min_amount]
     elif max_amount:
-        query+="e.amount<%s "
+        query+=" e.amount<%s AND"
         params+=[max_amount]
-    
-
-    # Filter by amount range if both min and max values are provided and also category
-    if min_amount and max_amount and category:
-        query=query+"c.name=%s AND e.amount BETWEEN %s AND %s "
-        params+=[category,min_amount,max_amount]
-
-    # Filter by category if a valid category is provided but not min and max
-    elif category and not max_amount and not min_amount:
-        query=query+" LOWER(c.name) = %s"
-        params.append(category.lower())
-    
-    #category and min value is given
-    elif category and min_amount and not max_amount:
-        query+="c.name=%s AND e.amount>=%s"
-        params+=([category.lower(),min_amount])
-    
-    #max and min given but not category
-    elif max_amount and  min_amount and not category:
-        query+="e.amount BETWEEN %s AND %s"
-        params+=([min_amount,max_amount])
-    
-    # only min amount
-    elif min_amount and not max_amount and not category:
-        query+="e.amount<=%s"
-        params+=([min_amount])
-    
-    #only max amount
-    elif max_amount and not max_amount and not category:
-        query+="e.amount>=%s"
-        params+=([max_amount])
-
-    #category and min amount
-    elif category and max_amount and not min_amount:
-        query+="c.name=%s AND e.amount<=%s"
-        params+=([category.lower(),max_amount])
         
     if desc:
-        query+="e.description IS NOT NULL"
+        query+=" e.description IS NOT NULL AND"
     if receipt:
-        query+="e.receipt IS NOT NULL"
+        query+=" e.receipt IS NOT NULL AND"
         
 
-    
+    query=query[:-4]
     cursor.execute(query, tuple(params))
     filtered_expenses = cursor.fetchall()
     

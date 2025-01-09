@@ -31,8 +31,8 @@ function add_amount(){
 
 function close_menu(){
     document.getElementById('add_amount_form').style.display='none';
-    document.getElementById('edit_expense').style.display='none';
     document.getElementById('edit_menu').style.display='none';
+    
 }
 
 let originalOrder = []; // Stores the default order of rows.

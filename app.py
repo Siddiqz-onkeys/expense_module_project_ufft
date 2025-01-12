@@ -231,6 +231,11 @@ def add_amount(expense_id):
     return redirect(url_for('index'))
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 96bdcdc303270386535ea3919f6387db908b3483
 @app.route('/filter_expenses', methods=["GET"])
 def filter_expenses():
     min_amount = request.args.get('filter_amount_range_min')  # Minimum amount input from the frontend

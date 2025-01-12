@@ -231,8 +231,6 @@ def add_amount(expense_id):
     return redirect(url_for('index'))
 
 
-
-
 @app.route('/filter_expenses', methods=["GET"])
 def filter_expenses():
     min_amount = request.args.get('filter_amount_range_min')  # Minimum amount input from the frontend
@@ -282,6 +280,7 @@ def filter_expenses():
     
     current_date = datetime.now().strftime('%Y-%m-%d')
     return render_template('index.html', expenses=filtered_expenses_list, max_date=current_date)
+
 
 ###### route to reset the view ########
 @app.route('/reset_filters')

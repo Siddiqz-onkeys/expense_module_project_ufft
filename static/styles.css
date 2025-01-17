@@ -74,7 +74,7 @@ button:hover {
     
 }
 
-#add_expense , #edit_expense, #sorting_filtering{
+#add_expense , #edit_expense, #sorting_filtering,#new_rec_form{
     padding: 50px;
     margin-top: 10px;
     border-radius: 10px;
@@ -264,4 +264,10 @@ a:hover {
         right: 0.5%; /* Center the form horizontally */
         transform: translateY(-100%) translateX(-10%);
     }
+}
+
+
+#rec_exp_conf_div{
+    padding:15px;
+    border:2px solid black;
 }

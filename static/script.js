@@ -97,8 +97,10 @@ function verify_age(user_id, expense_id) {
             const ageMessage = document.getElementById("ageMessage");
             const deleteConfirmationSection = document.getElementById("deleteConfirmationSection");
             if (data.is_major) {
-                deleteConfirmationSection.style.display = "block"; // Show confirmation dialog
                 del_id = expense_id; // Set global variable
+                console.log(del_id)
+                deleteConfirmationSection.style.display = "block"; // Show confirmation dialog
+                
             } else {
                 ageMessage.style.display = "block";
                 ageMessage.style.animation = "none"; // Reset animation
@@ -109,11 +111,11 @@ function verify_age(user_id, expense_id) {
         .catch(error => console.error("Error:", error));
 }
 
-function deletion(event) {
-    event.preventDefault(); // Prevent default form submission
-
+function deletion_f() {
+    console.log("deletE_f",del_id)
     const form = document.getElementById('deleteConfirmationSection');
     form.action = `/delete_expense/${del_id}`; // Dynamically set the form action
+    form.submit()
 
     const deleteMessage = document.getElementById("deleteMessage");
     deleteMessage.style.display = "block";
@@ -121,10 +123,7 @@ function deletion(event) {
     void deleteMessage.offsetWidth; // Trigger reflow
     deleteMessage.style.animation = "showHide 1.5s ease-in-out";
 
-    // Optionally, delay the actual submission to allow the animation to play
-    setTimeout(() => {
-        form.submit(); // Submit the form after the animation
-    }, -3500); // Adjust delay to match animation duration
+    
 }
 
 

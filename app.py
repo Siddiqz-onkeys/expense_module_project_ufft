@@ -31,63 +31,74 @@ db_config={
 connect_=mysql.connector.connect(**db_config)
 cursor=connect_.cursor()
 
+
 ########### ESTABLISHING A ROUTE FOR THE HTML REQUEST ##########
-@app.route('/') #creates a root route for the flask application
+@app.route('/',methods=["GET",'POST']) #creates a root route for the flask application
  #index function that returnrs the HTML content from the file and sends it to the user as a response for accessing the root URL
 def index():
-    
     current_date = datetime.now().strftime('%Y-%m-%d')
-    # Fetch expenses for the user
-    cursor.execute("""
-        SELECT expense_id, date, name, amount, description, receipt,user_id 
-        FROM expenses e1 
-        JOIN categories c1 
-        ON e1.category_id = c1.category_id 
-        ORDER BY expense_id DESC
-    """)
-    expenses = cursor.fetchall()
-
-    expense_records = [
+    ######### fetching users data ########
+    cursor.execute("SELECT user_id,user_name,family_id FROM users")
+    users_list=cursor.fetchall()
+    
+    users=[
         {
-            'expense_id': exp[0],
-            'date_in': exp[1],
-            'category': exp[2],
-            'amount': exp[3],
-            'desc': exp[4],
-            'receipt': exp[5],
-            'user_id':exp[6]
-        }
-        for exp in expenses
+            'user_id': user[0],
+            'user_name':user[1],
+            'family_id': user[2]
+            
+        } for user in users_list
     ]
+    
+    if request.method=="GET":
+        return render_template('index.html',users=users,max_date=current_date)
+    else:
+        global curr_user
+        curr_user = request.form.get('user_id')
+        # Fetch expenses for the user
+        cursor.execute("SELECT expense_id, date, name, amount, description, receipt FROM expenses e1 JOIN categories c1 ON e1.category_id = c1.category_id WHERE user_id=%s ORDER BY expense_id DESC ",(curr_user,))
+        expenses = cursor.fetchall()
 
-    # Fetch recurring expenses
-    cursor.execute("SELECT rec_id, description, amount, user_id FROM recc_expenses")
-    recs = cursor.fetchall()
+        expense_records = [
+            {
+                'expense_id': exp[0],
+                'date_in': exp[1],
+                'category': exp[2],
+                'amount': exp[3],
+                'desc': exp[4],
+                'receipt': exp[5]
+            }
+            for exp in expenses
+        ]
 
-    rec_exps = [
-        {
-            'rec_id': exp[0],
-            'description': exp[1],
-            'amount': exp[2],
-            'user_id': exp[3]
-        }
-        for exp in recs
-    ]
+        # Fetch recurring expenses
+        cursor.execute("SELECT rec_id, description, amount, user_id FROM recc_expenses")
+        recs = cursor.fetchall()
 
-    # Fetch all categories
-    cursor.execute("SELECT * FROM categories")
-    cats = cursor.fetchall()
-    categories = [
-        {
-            'cat_id': item[0],
-            'cat_name': item[1]
-        }
-        for item in cats
-    ]
-    return render_template('index.html',expenses=expense_records,
-            reccur_exps=rec_exps,
-            categories=categories,
-            max_date=current_date) #Flask by default looks for templkate forlder to render the html file
+        rec_exps = [
+            {
+                'rec_id': exp[0],
+                'description': exp[1],
+                'amount': exp[2],
+                'user_id': exp[3]
+            }
+            for exp in recs
+        ]
+
+        # Fetch all categories
+        cursor.execute("SELECT * FROM categories")
+        cats = cursor.fetchall()
+        categories = [
+            {
+                'cat_id': item[0],
+                'cat_name': item[1]
+            }
+            for item in cats
+        ]
+        return render_template('index.html',expenses=expense_records,user_id=curr_user,users=users,
+                reccur_exps=rec_exps,
+                categories=categories,
+                max_date=current_date) #Flask by default looks for templkate forlder to render the html file
 
 
 ########## SAVING THE UPLOADED FILES IN A FOLDER ############
@@ -146,7 +157,7 @@ def get_form_data():
 def add_expense(user_id, family_id, category_id, amount, date_in, description="", receipt=""):
     # Start constructing the query
     query = "INSERT INTO EXPENSES (user_id, category_id, date, amount, family_id"
-    params = [user_id, category_id, date_in, amount, family_id]
+    params = [curr_user, category_id, date_in, amount, family_id]
     
     # Dynamically add optional columns
     if description:
@@ -171,7 +182,7 @@ def add_expense(user_id, family_id, category_id, amount, date_in, description=""
 
 @app.route('/verify_major/<int:user_id>',methods=["GET"])
 def verify_major(user_id):
-    cursor.execute("SELECT dob FROM users WHERE user_id=%s",(user_id,))
+    cursor.execute("SELECT dob FROM users WHERE user_id=%s",(curr_user,))
     dob=cursor.fetchone()[0]
     current_day=datetime.today()
     
@@ -189,28 +200,11 @@ undo_timeout = 10
 ########## DELETE EXPENSE  #######
 @app.route('/delete_expense/<int:expense_id>', methods=['POST'])
 def delete_expense(expense_id):
-    # Fetch the expense before deleting
-    cursor.execute("SELECT * FROM expenses WHERE id = %s", (expense_id,))
-    expense = cursor.fetchone()
-
-    if expense:
-        # Store the expense details in the in-memory store
-        deleted_expenses[expense_id] = {
-            'data': expense,  # Store the entire expense record
-            'timestamp': time.time()
-        }
-
-        # Delete the expense from the database
-        cursor.execute("DELETE FROM expenses WHERE id = %s", (expense_id,))
-        connect_.commit()
-
-        cursor.close()
-        connect_.close()
-        return jsonify({"message": "Expense deleted. You can undo."}), 200
-
-    cursor.close()
-    connect_.close()
-    return jsonify({"message": "Expense not found."}), 404
+    # Delete the expense from the database
+    print("called in app")
+    cursor.execute(" DELETE FROM expenses WHERE expense_id = %s", (expense_id,))
+    connect_.commit()        
+    return redirect(url_for('index'),method="POST")
 
 ############ EDIT EXPENSE #######
 @app.route('/edit_expense/<int:expense_id>', methods=["POST"])
@@ -291,8 +285,8 @@ def filter_expenses():
     receipt=request.args.get('receipt') #receipt   
 
     # Initialize base query and parameters
-    query = "SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id WHERE "
-    params = []
+    query = "SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id WHERE user_id=%s "
+    params = [curr_user]
     
     if category:
         query+="c.name=%s AND"
@@ -343,7 +337,7 @@ def reset_filters():
 ###### Sorting function ##
 @app.route('/sort_table/<sort_by>')
 def sort_table(sort_by):
-    query="SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id"
+    query="SELECT e.expense_id,e.date,c.name,e.amount,e.description,e.receipt FROM expenses e JOIN categories c ON e.category_id = c.category_id WHERE user_id=%s "
     print(sort_by,sort_order[sort_by])
     if sort_order[sort_by]=="default":
         sort_order[sort_by]='asc'
@@ -356,7 +350,7 @@ def sort_table(sort_by):
         sort_order[sort_by]='default'
         return redirect('/')
         
-    cursor.execute(query,(sort_by,))
+    cursor.execute(query,(curr_user,sort_by,))
     sorted_expenses=cursor.fetchall() 
     cursor.reset()
     expenses = [

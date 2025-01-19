@@ -86,7 +86,7 @@ function sortTable(columnIndex, header) {
 let del_id = 0;
 
 function verify_age(user_id, expense_id) {
-    fetch(`/verify_major/${user_id}`) // Use the correct endpoint
+    fetch(`/verify_major`) // Use the correct endpoint
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -122,7 +122,6 @@ function deletion_f() {
     deleteMessage.style.animation = "none"; // Reset animation
     void deleteMessage.offsetWidth; // Trigger reflow
     deleteMessage.style.animation = "showHide 1.5s ease-in-out";
-
     
 }
 

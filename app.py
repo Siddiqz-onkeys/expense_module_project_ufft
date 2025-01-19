@@ -36,6 +36,7 @@ cursor=connect_.cursor()
 @app.route('/',methods=["GET",'POST']) #creates a root route for the flask application
  #index function that returnrs the HTML content from the file and sends it to the user as a response for accessing the root URL
 def index():
+    global current_date
     current_date = datetime.now().strftime('%Y-%m-%d')
     ######### fetching users data ########
     cursor.execute("SELECT user_id,user_name,family_id FROM users")
@@ -101,6 +102,40 @@ def index():
                 max_date=current_date) #Flask by default looks for templkate forlder to render the html file
 
 
+def get_expenses():
+    cursor.execute("SELECT expense_id, date, name, amount, description, receipt FROM expenses e1 JOIN categories c1 ON e1.category_id = c1.category_id WHERE user_id=%s ORDER BY expense_id DESC ",(curr_user,))
+    expenses = cursor.fetchall()
+
+    expense_records = [
+        {
+            'expense_id': exp[0],
+            'date_in': exp[1],
+            'category': exp[2],
+            'amount': exp[3],
+            'desc': exp[4],
+            'receipt': exp[5]
+        }
+        for exp in expenses
+    ]
+    
+    return expense_records
+
+
+def get_users():
+    cursor.execute("SELECT user_id,user_name,family_id FROM users")
+    users_list=cursor.fetchall()
+    
+    users=[
+        {
+            'user_id': user[0],
+            'user_name':user[1],
+            'family_id': user[2]
+            
+        } for user in users_list
+    ]
+    return users
+    
+
 ########## SAVING THE UPLOADED FILES IN A FOLDER ############
 @app.route('/upload_receipt', methods=['POST'])
 def upload_receipt():
@@ -108,7 +143,7 @@ def upload_receipt():
     if file:
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return redirect(url_for('index'))
+        return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
 
 
 ###### getting the form data and calling the add expense function
@@ -148,13 +183,14 @@ def get_form_data():
         receipt = receipt_filename
     
     # Add the expense to the database
-    add_expense(user_id, family_id, category_id, amount, date_in, description, receipt)
+    add_expense(family_id, category_id, amount, date_in, description, receipt)
     
-    return redirect(url_for('index')) ##### this returns a success message 
+    
+    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date) ##### this returns a success message 
 
 
 ####### ADD EXPENSE ###########
-def add_expense(user_id, family_id, category_id, amount, date_in, description="", receipt=""):
+def add_expense(family_id, category_id, amount, date_in, description="", receipt=""):
     # Start constructing the query
     query = "INSERT INTO EXPENSES (user_id, category_id, date, amount, family_id"
     params = [curr_user, category_id, date_in, amount, family_id]
@@ -180,8 +216,8 @@ def add_expense(user_id, family_id, category_id, amount, date_in, description=""
  ######### AGE VERIFICATION ############
 
 
-@app.route('/verify_major/<int:user_id>',methods=["GET"])
-def verify_major(user_id):
+@app.route('/verify_major',methods=["GET"])
+def verify_major():
     cursor.execute("SELECT dob FROM users WHERE user_id=%s",(curr_user,))
     dob=cursor.fetchone()[0]
     current_day=datetime.today()
@@ -203,8 +239,8 @@ def delete_expense(expense_id):
     # Delete the expense from the database
     print("called in app")
     cursor.execute(" DELETE FROM expenses WHERE expense_id = %s", (expense_id,))
-    connect_.commit()        
-    return redirect(url_for('index'),method="POST")
+    connect_.commit()
+    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
 
 ############ EDIT EXPENSE #######
 @app.route('/edit_expense/<int:expense_id>', methods=["POST"])
@@ -259,7 +295,7 @@ def edit_expense(expense_id):
         
     cursor.execute("UPDATE expenses SET category_id=%s,amount=%s,description=%s,date=%s,receipt=%s WHERE expense_id=%s",(new_cat_id,new_amount,new_desc,new_date,receipt,expense_id,))
     connect_.commit()
-    return redirect(url_for('index'))
+    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
            
 
 ###### ADD AMOUNT #####    
@@ -273,7 +309,7 @@ def add_amount(expense_id):
     
     cursor.execute("UPDATE expenses SET amount=%s WHERE expense_id=%s",(sum,expense_id,))
     connect_.commit()
-    return redirect(url_for('index'))
+    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
 
 
 @app.route('/filter_expenses', methods=["GET"])
@@ -324,7 +360,7 @@ def filter_expenses():
     ]
     
     current_date = datetime.now().strftime('%Y-%m-%d')
-    return render_template('index.html', expenses=filtered_expenses_list, max_date=current_date)
+    return render_template('index.html', expenses=filtered_expenses_list,max_date=current_date)
 
 
 ###### route to reset the view ########
@@ -377,7 +413,7 @@ def add_rec_to_exp(rec_id):
     params[-1]=request.form.get('date')
     cursor.execute("INSERT INTO expenses (user_id, family_id, amount, category_id,description,receipt,date) VALUES (%s,%s,%s,%s,%s,%s,%s)",(tuple(params)))
     connect_.commit()  
-    return redirect(url_for('index'))
+    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
 
 
 ####### METHOD TO ADD A NEW RECCURING EXPENSE #######
@@ -401,7 +437,7 @@ def add_rec_exp():
     cursor.execute("INSERT INTO recc_expenses (user_id,family_id,category_id,date,amount,description) VALUES (%s,%s,%s,%s,%s,%s) ",(user_id,family_id,category_id,date_in,amount,desc,))
     connect_.commit()
     
-    return redirect(url_for('index'))
+    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
 
 
 if __name__=="__main__":

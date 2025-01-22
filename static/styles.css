@@ -80,7 +80,7 @@ button:hover {
     
 }
 
-#add_expense , #edit_expense, #sorting_filtering,#new_rec_form{
+#add_expense , #edit_expense, #sorting_filtering,#new_rec_form,#interval-selection{
     padding: 50px;
     margin-top: 10px;
     border-radius: 10px;

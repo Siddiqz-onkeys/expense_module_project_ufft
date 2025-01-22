@@ -204,3 +204,9 @@ let lastDeletedExpense = null; // Store the last deleted expense ID
                 form.action = `/add_rec_to_exp/${rec_id_}`;
             }
         }
+
+function overview(){
+    const form=document.getElementById('interval-selection')
+    form.submit()
+    
+}

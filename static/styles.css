@@ -80,36 +80,37 @@ button:hover {
     
 }
 
-#add_expense , #edit_expense, #sorting_filtering,#new_rec_form,#interval-selection{
+#add_expense, #edit_expense, #sorting_filtering, #new_rec_form, #interval-selection {
     padding: 50px;
     margin-top: 10px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    background-color: #f1ece8;
+    border: 2px solid rgba(255, 255, 255, 0.3); /* Semi-transparent border */
+    border-radius: 15px; /* Rounded corners */
+    background: rgba(255, 255, 255, 0.1); /* Transparent white background */
+    backdrop-filter: blur(10px); /* Apply the glassy blur effect */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25); /* Add a soft shadow for depth */
     color: #032a42;
     width: 350px;
     margin: 0 auto;
     display: none;
     position: fixed;
-    top: 50%; /* Center vertically */
-    left: 50%; /* Start from center */
-    transform: translate(-190%, -70%);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    top: 100%; /* Start off-screen at the bottom */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%) translateY(0); /* Adjust for centering */
     z-index: 1000;
     transition: opacity 1s ease, transform 1s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    align-items: center;
-    border: 2px solid #274472;
-    animation: slideIn 0.5s ease-out forwards;
+    animation: slideInFromBottom 0.5s ease-out forwards;
 }
 
-@keyframes slideIn {
+@keyframes slideInFromBottom {
     from {
-        left: -100%; /* Start off-screen to the left */
+        top: 100%; /* Start off-screen at the bottom */
+        opacity: 0; /* Invisible at the start */
     }
     to {
-        left: 50%; /* Center the form horizontally */
-        transform: translateY(-50%) translateX(-180%);
+        top: 50%; /* Center the form vertically */
+        transform: translateX(-50%) translateY(-50%); /* Perfect centering */
+        opacity: 1; /* Fully visible at the end */
     }
 }
 
@@ -276,4 +277,51 @@ a:hover {
 #rec_exp_conf_div{
     padding:15px;
     border:2px solid black;
+}
+
+.summary-info {
+    position: fixed; /* Make it appear on top without affecting other elements */
+    top: 50%; /* Center it vertically */
+    left: 50%; /* Center it horizontally */
+    transform: translate(-50%, -50%); /* Adjust for perfect centering */
+    display: flex; /* Enable flexbox layout */
+    flex-direction: column; /* Align child elements in a column */
+    width: 300px; /* Adjust width as needed */
+    height: 400px; /* Adjust height as needed */
+    border: 2px solid rgba(255, 255, 255, 0.3); /* Semi-transparent border */
+    border-radius: 15px; /* Rounded corners */
+    background: rgba(255, 255, 255, 0.1); /* Transparent white background */
+    backdrop-filter: blur(10px); /* Apply the glassy blur effect */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25); /* Add a soft shadow for depth */
+    z-index: 1000; /* Ensure it stays on top of other elements */
+    overflow: hidden; /* Prevent overflow if content exceeds the box */
+    padding: 20px; /* Add some padding */
+    color: black; /* Text color for contrast */
+}
+
+
+.flashcards {
+    display: none; /* Hide all flashcards initially */
+    text-align: center;
+    margin: 10px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.flashcards.active {
+    display: block; /* Show the active flashcard */
+}
+.arrows i {
+    font-size: 24px;
+    cursor: pointer;
+    margin: 0 10px;
+    color: #213555;
+    transition: color 0.3s ease;
+}
+
+.arrows i.disabled {
+    cursor: not-allowed;
+    color: #ccc; /* Grey out the disabled arrow */
 }

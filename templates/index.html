@@ -33,7 +33,7 @@
                 <button onclick=" document.getElementById('add_expense').style.display='block'"> Add Expense</button>
                 <button onclick=" document.getElementById('interval-selection').style.display='block'"> Overview </button>
                 <button onclick=" document.getElementById('sorting_filtering').style.display='block'"> Filters </button>
-                <button onclick="show_rec_tab()"> Reccuring expenses </button>
+                <button onclick="show_rec_tab()"> Reccuring expenses </button>                
             </div>
 
             <div class="body">
@@ -121,7 +121,7 @@
                     </div>
                     
                     <!-- ########### OVERIEW SECTION ######-->
-                    <div class="overview-section" id="overview-section">
+                    <div class="overview-section" id="overview-section" >
                         <form id="interval-selection" action="/overview" enctype="multipart/form" method="POST" >
                             <label> SELECT THE DURATION </label>
                             </br></br>
@@ -157,18 +157,25 @@
                             </br></br>
 
                             <button type="button" onclick="overview()"> Get Summary </button>
+                            <button type="button" onclick="document.getElementById('interval-selection').style.display='none'"> CANCEL </button>
                         </form>
                         {% if summary %}
-                            <div class="summary-info">
-                                <p> Total Spent {{ summary[0]}} </p>
-                                <p> Most Spent category {{summary[1]}} </p>
-                                <p> Amount Spent on Most Spent Category {{ summary[2] }} </p>
-                                <p> Average Amount Spent {{ summary[3] }} </p>
-                                <p> No of Expenses Logged {{ summary[4] }} </p>
+                            <div class="summary-info" id="summary-info">
+                                <i class="fas fa-close" onclick="document.getElementById('summary-info').style.display='none'"></i>
+                                <div class="flashcards"> <p> Total Spent: {{ summary[0]}} </p> </div>
+                                <div class="flashcards"> <p> Most Spent category: {{summary[1]}} </p> </div>
+                                <div class="flashcards"> <p> Amount Spent on Most Spent Category: {{ summary[2] }} </p> </div>
+                                <div class="flashcards"> <p> Average Amount Spent: {{ summary[3] }} </p> </div>
+                                <div class="flashcards"> <p> No of Expenses Logged: {{ summary[4] }} </p> </div>
+                                <div class="arrows"> 
+                                    <i class="fas fa-arrow-left" id="left-arrow" onclick="prevCard()"></i>
+                                    <i class="fas fa-arrow-right"id="right-arrow" onclick="nextCard()"></i>
+                                </div>
                             </div> 
+                            
                         {% endif %}                        
                     </div>
-
+                    
                     <!-- ####### SORTING AND FILTERING FORM #######-->        
                     <div class="sorting_filtering_form">
                         <form id="sorting_filtering" method="GET" action="/filter_expenses" enctype="multipart/form-data" style="display: none;">
@@ -408,8 +415,6 @@
                             
                         </div>
                     </form>    
-
-                    
                 </div>
                 
                 <!-- ###### DEFAULT VIEW OF THE TABLE #####-->
@@ -469,9 +474,7 @@
                                 <div id="pop-up messages">
                                     <div id="ageMessage" > Action Restricted, Since You are a minor </div>
                                 </div>
-                                <div id="deleteMessage"> Record Deleteion Successfull!!! </div>
-                            
-                            
+                                <div id="deleteMessage"> Record Deleteion Successfull!!! </div>                            
                             </div>
                             {% endfor %}
                         </tbody>

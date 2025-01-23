@@ -440,9 +440,7 @@ def add_rec_exp():
 
 @app.route('/overview',methods=["POST"])
 def overview():
-    select_par=int(request.form.get('duration'))
-    print(select_par)
-    
+    select_par=int(request.form.get('duration'))    
     # Define the base query
     base_query = """
     WITH category_totals AS (
@@ -451,7 +449,7 @@ def overview():
             SUM(e.amount) AS total_spent_on_category
         FROM expenses e
         JOIN categories c ON e.category_id = c.category_id
-        WHERE e.user_id = 1 {date_filter}
+        WHERE e.user_id = {curr_user} {date_filter}
         GROUP BY c.name
         ORDER BY total_spent_on_category DESC
         LIMIT 1
@@ -463,40 +461,33 @@ def overview():
         ROUND(AVG(e.amount), 2) AS average_amount_spent,
         COUNT(*) AS total_expenses_logged
     FROM expenses e
-    WHERE e.user_id = 1 {date_filter};
+    WHERE e.user_id = {curr_user} {date_filter};
     """
 
     # Define date filters based on the option selected
     date_filter = ""
     match select_par:  # `select_par` determines the time range       
         case 1:
-            print("case 1")
             date_filter = "AND e.date >= CURDATE() - INTERVAL 10 DAY"
         case 2:
-            print("case 2")
             date_filter = "AND e.date >= CURDATE() - INTERVAL 15 DAY"
         case 3:
-            print("case 3")
             date_filter = "AND e.date >= CURDATE() - INTERVAL 1 MONTH"
         case 4:
-            print("case 4")
             date_filter = "AND e.date >= CURDATE() - INTERVAL 3 MONTH"
         case 5:
-            print("case 5")
             date_filter = "AND e.date >= CURDATE() - INTERVAL 1 YEAR"
         case 6:
-            print("case 6")
             date_filter = ""  # No date filter for all-time expenses
 
     # Inject the date filter into the query
-    final_query = base_query.format(date_filter=date_filter)
+    final_query = base_query.format(date_filter=date_filter,curr_user=curr_user)
 
     # Execute the query
     cursor.execute(final_query)
    
     tot=cursor.fetchone()
     summary_=[tot[0],tot[1],tot[2],tot[3],tot[4]]
-    print(summary_)
     return render_template('index.html',summary=summary_,expenses=get_expenses(),users=get_users(),max_date=current_date,method="POST")
 
 if __name__=="__main__":

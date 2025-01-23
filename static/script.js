@@ -210,3 +210,63 @@ function overview(){
     form.submit()
     
 }
+
+let currentCardIndex = 0;
+
+function showCard(index) {
+    const flashcards = document.querySelectorAll('.flashcards');
+    flashcards.forEach((card, i) => {
+        card.classList.remove('active'); // Hide all cards
+        if (i === index) {
+            card.classList.add('active'); // Show the active card
+        }
+    });
+
+    // Update arrow states
+    updateArrowStates(index, flashcards.length);
+}
+
+function nextCard() {
+    const flashcards = document.querySelectorAll('.flashcards');
+    if (currentCardIndex < flashcards.length - 1) {
+        currentCardIndex++;
+        showCard(currentCardIndex);
+    }
+}
+
+function prevCard() {
+    if (currentCardIndex > 0) {
+        currentCardIndex--;
+        showCard(currentCardIndex);
+    }
+}
+
+function updateArrowStates(index, totalCards) {
+    const leftArrow = document.getElementById('left-arrow');
+    const rightArrow = document.getElementById('right-arrow');
+
+    // Disable left arrow if on the first card
+    if (index === 0) {
+        leftArrow.classList.add('disabled');
+        leftArrow.style.pointerEvents = 'none';
+    } else {
+        leftArrow.classList.remove('disabled');
+        leftArrow.style.pointerEvents = 'auto';
+    }
+
+    // Disable right arrow if on the last card
+    if (index === totalCards - 1) {
+        rightArrow.classList.add('disabled');
+        rightArrow.style.pointerEvents = 'none';
+    } else {
+        rightArrow.classList.remove('disabled');
+        rightArrow.style.pointerEvents = 'auto';
+    }
+}
+
+// Ensure the first card is shown by default
+document.addEventListener('DOMContentLoaded', () => {
+    showCard(currentCardIndex);
+});
+
+

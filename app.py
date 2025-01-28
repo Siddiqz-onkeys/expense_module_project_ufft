@@ -3,6 +3,9 @@ from datetime import datetime
 from flask import Flask,request,render_template,jsonify,redirect,url_for
 import os,time
 from werkzeug.utils import secure_filename
+from threading import Timer
+from apscheduler.schedulers.background import BackgroundScheduler
+import smtplib
 
 ## initializing the flask application
 app=Flask(__name__)
@@ -27,79 +30,57 @@ db_config={
     'port':3306
 }
 
+
+
+GMAIL_ID='dum31555@gmail.com'
+GMAIL_PSWD='dweg wzyz mbfa wvkv'
+
+def sendEmail(to, sub, msg):
+    print(f"Email to {to} sent with sub:{sub} and message {msg}")
+    s=smtplib.SMTP('smtp.gmail.com',587)
+    s.starttls()
+    s.login(GMAIL_ID,GMAIL_PSWD)
+    s.sendmail(GMAIL_ID, to, f"Subject: {sub}\n\n{msg}")
+    s.quit()
+
+
 #establishing a conenction with the database using the configuration
 connect_=mysql.connector.connect(**db_config)
 cursor=connect_.cursor()
 
+def get_recc_to_sendemail():
+    print("Called")
+    cursor.execute("SELECT users.user_name,users.email,recc_expenses.amount,recc_expenses.description FROM users JOIN recc_expenses on users.user_id=recc_expenses.user_id WHERE start_date BETWEEN CURDATE() AND CURDATE() + INTERVAL 3 DAY;")
+    res = cursor.fetchall()
 
-########### ESTABLISHING A ROUTE FOR THE HTML REQUEST ##########
-@app.route('/',methods=["GET",'POST']) #creates a root route for the flask application
- #index function that returnrs the HTML content from the file and sends it to the user as a response for accessing the root URL
-def index():
-    global current_date
-    current_date = datetime.now().strftime('%Y-%m-%d')
-    ######### fetching users data ########
-    cursor.execute("SELECT user_id,user_name,family_id FROM users")
-    users_list=cursor.fetchall()
-    
-    users=[
-        {
-            'user_id': user[0],
-            'user_name':user[1],
-            'family_id': user[2]
-            
-        } for user in users_list
-    ]
-    
-    if request.method=="GET":
-        return render_template('index.html',users=users,max_date=current_date)
-    else:
-        global curr_user
-        curr_user = request.form.get('user_id')
-        # Fetch expenses for the user
-        cursor.execute("SELECT expense_id, date, name, amount, description, receipt FROM expenses e1 JOIN categories c1 ON e1.category_id = c1.category_id WHERE user_id=%s ORDER BY expense_id DESC ",(curr_user,))
-        expenses = cursor.fetchall()
+    recs=[{
+        'user_name':exp[0],
+        'email':exp[1],
+        'amount':exp[2],
+        'description':exp[3]
+    }for exp in res]
+    subject="remainder for the upcoming reccuring expense"
 
-        expense_records = [
-            {
-                'expense_id': exp[0],
-                'date_in': exp[1],
-                'category': exp[2],
-                'amount': exp[3],
-                'desc': exp[4],
-                'receipt': exp[5]
-            }
-            for exp in expenses
-        ]
+    for exp in recs:
+        msg=(
+            f"Hey {exp['user_name']},\n\n"
+            f"This is just a remainder for your upcoming recurring expense:\n"
+            f"Expense: {exp['description']}\n"
+            f"Amount: ${exp['amount']}\n"
+            f"Regards,\n Expense Management Team,\n Famora"
+        )
+        sendEmail(exp['email'],subject,msg)
+    print("mail has been sent")
 
-        # Fetch recurring expenses
-        cursor.execute("SELECT rec_id, description, amount, user_id FROM recc_expenses")
-        recs = cursor.fetchall()
 
-        rec_exps = [
-            {
-                'rec_id': exp[0],
-                'description': exp[1],
-                'amount': exp[2],
-                'user_id': exp[3]
-            }
-            for exp in recs
-        ]
+############ to automate the remainder sending fucntion ###########
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=get_recc_to_sendemail, trigger="interval", hours=24)  # Runs every 24 hours
+scheduler.start()
 
-        # Fetch all categories
-        cursor.execute("SELECT * FROM categories")
-        cats = cursor.fetchall()
-        categories = [
-            {
-                'cat_id': item[0],
-                'cat_name': item[1]
-            }
-            for item in cats
-        ]
-        return render_template('index.html',expenses=expense_records,user_id=curr_user,users=users,
-                reccur_exps=rec_exps,
-                categories=categories,
-                max_date=current_date) #Flask by default looks for templkate forlder to render the html file
+########################### Shut down the scheduler when the app stops
+import atexit
+atexit.register(lambda: scheduler.shutdown())
 
 
 def get_expenses():
@@ -134,8 +115,61 @@ def get_users():
         } for user in users_list
     ]
     return users
-    
 
+def get_rec_exps():
+    # Fetch recurring expenses
+        cursor.execute("SELECT rec_id, description, amount FROM recc_expenses WHERE user_id=%s ",(curr_user,))
+        recs = cursor.fetchall()
+
+        rec_exps = [
+            {
+                'rec_id': exp[0],
+                'description': exp[1],
+                'amount': exp[2],
+            }
+            for exp in recs
+        ]
+        return rec_exps
+        
+def get_cats():
+    # Fetch all categories
+        cursor.execute("SELECT * FROM categories")
+        cats = cursor.fetchall()
+        categories = [
+            {
+                'cat_id': item[0],
+                'cat_name': item[1]
+            }
+            for item in cats
+        ]
+        return categories
+    
+########### ESTABLISHING A ROUTE FOR THE HTML REQUEST ##########
+@app.route('/',methods=["GET",'POST']) #creates a root route for the flask application
+ #index function that returnrs the HTML content from the file and sends it to the user as a response for accessing the root URL
+def index():
+    global current_date
+    current_date = datetime.now().strftime('%Y-%m-%d')
+   
+    if request.method=="GET":
+        return render_template('index.html',users=get_users(),max_date=current_date)
+    else:
+        global curr_user
+        curr_user = request.form.get('user_id')
+        print(curr_user)
+        # Fetch expenses for the user
+        global curr_family_id
+        cursor.execute("SELECT family_id FROM users WHERE user_id=%s",(curr_user,))
+        curr_family_id=cursor.fetchone()[0]
+        
+        return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date) #Flask by default looks for templkate forlder to render the html file
+
+
+
+    
 ########## SAVING THE UPLOADED FILES IN A FOLDER ############
 @app.route('/upload_receipt', methods=['POST'])
 def upload_receipt():
@@ -149,10 +183,6 @@ def upload_receipt():
 ###### getting the form data and calling the add expense function
 @app.route('/get_form_data',methods=['POST'])
 def get_form_data():
-    
-    user_id=1
-    
-    family_id=1
     
     category=request.form.get('category')
     #print("Category being queried:", category)
@@ -183,17 +213,20 @@ def get_form_data():
         receipt = receipt_filename
     
     # Add the expense to the database
-    add_expense(family_id, category_id, amount, date_in, description, receipt)
+    add_expense(category_id, amount, date_in, description, receipt)
     
     
-    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date) ##### this returns a success message 
+    return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date) ##### this returns a success message 
 
 
 ####### ADD EXPENSE ###########
-def add_expense(family_id, category_id, amount, date_in, description="", receipt=""):
+def add_expense( category_id, amount, date_in, description="", receipt=""):
     # Start constructing the query
     query = "INSERT INTO EXPENSES (user_id, category_id, date, amount, family_id"
-    params = [curr_user, category_id, date_in, amount, family_id]
+    params = [curr_user, category_id, date_in, amount, curr_family_id]
     
     # Dynamically add optional columns
     if description:
@@ -225,20 +258,33 @@ def verify_major():
         age -= 1
     
     is_major = age > 18
-    return jsonify({"is_major": is_major})           
- 
+    return jsonify({"is_major": is_major})
 
-deleted_expenses = {}
-undo_timeout = 10 
-   
-########## DELETE EXPENSE  #######
-@app.route('/delete_expense/<int:expense_id>', methods=['POST'])
+global deleted_expense
+
+@app.route('/delete_expense/<int:expense_id>', methods=["GET"])
 def delete_expense(expense_id):
-    # Delete the expense from the database
-    print("called in app")
-    cursor.execute(" DELETE FROM expenses WHERE expense_id = %s", (expense_id,))
-    connect_.commit()
-    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
+    isdeleted=False
+    # Fetch the expense to delete
+    cursor.execute("SELECT * FROM expenses WHERE expense_id=%s", (expense_id,))
+    if cursor.fetchone():
+        deleted_expense = cursor.fetchone()
+        cursor.execute("DELETE FROM expenses WHERE expense_id=%s",(expense_id,))
+        connect_.commit()
+        isdeleted=True
+    return jsonify({"isdeleted":isdeleted})
+  
+@app.route('/rollback_deletion', methods=["POST"])
+def rollback_deletion():
+    # Check if the expense is in the cache
+    if deleted_expense:
+        # Restore the expense to the database
+        cursor.execute(
+            "INSERT INTO expenses (expense_id, date_in, category, amount, desc,receipt) VALUES (%s, %s, %s, %s, %s,%s)",
+            deleted_expense
+        )
+        connect_.commit()
+    return True
 
 ############ EDIT EXPENSE #######
 @app.route('/edit_expense/<int:expense_id>', methods=["POST"])
@@ -293,7 +339,10 @@ def edit_expense(expense_id):
         
     cursor.execute("UPDATE expenses SET category_id=%s,amount=%s,description=%s,date=%s,receipt=%s WHERE expense_id=%s",(new_cat_id,new_amount,new_desc,new_date,receipt,expense_id,))
     connect_.commit()
-    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
+    return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date)
            
 
 ###### ADD AMOUNT #####    
@@ -307,7 +356,10 @@ def add_amount(expense_id):
     
     cursor.execute("UPDATE expenses SET amount=%s WHERE expense_id=%s",(sum,expense_id,))
     connect_.commit()
-    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
+    return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date)
 
 
 @app.route('/filter_expenses', methods=["GET"])
@@ -358,7 +410,10 @@ def filter_expenses():
     ]
     
     current_date = datetime.now().strftime('%Y-%m-%d')
-    return render_template('index.html', expenses=filtered_expenses_list,max_date=current_date)
+    return render_template('index.html',expenses=filtered_expenses,user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date)
 
 
 ###### route to reset the view ########
@@ -411,14 +466,17 @@ def add_rec_to_exp(rec_id):
     params[-1]=request.form.get('date')
     cursor.execute("INSERT INTO expenses (user_id, family_id, amount, category_id,description,receipt,date) VALUES (%s,%s,%s,%s,%s,%s,%s)",(tuple(params)))
     connect_.commit()  
-    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
+    return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date)
 
 
 ####### METHOD TO ADD A NEW RECCURING EXPENSE #######
 @app.route('/add_rec_exp',methods=["POST"])
 def add_rec_exp(): 
-    user_id=1
-    family_id=1   
+    user_id=curr_user
+    family_id=curr_family_id
     category=request.form.get('category')
     #print("Category being queried:", category)
 
@@ -435,7 +493,10 @@ def add_rec_exp():
     cursor.execute("INSERT INTO recc_expenses (user_id,family_id,category_id,date,amount,description) VALUES (%s,%s,%s,%s,%s,%s) ",(user_id,family_id,category_id,date_in,amount,desc,))
     connect_.commit()
     
-    return render_template('index.html',expenses=get_expenses(),users=get_users(),max_date=current_date)
+    return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date)
 
 
 @app.route('/overview',methods=["POST"])
@@ -488,7 +549,10 @@ def overview():
    
     tot=cursor.fetchone()
     summary_=[tot[0],tot[1],tot[2],tot[3],tot[4]]
-    return render_template('index.html',summary=summary_,expenses=get_expenses(),users=get_users(),max_date=current_date,method="POST")
+    return render_template('index.html',expenses=get_expenses(),user_id=curr_user,users=get_users(),
+                reccur_exps=get_rec_exps(),
+                categories=get_cats(),
+                max_date=current_date,summary=summary_)
 
 if __name__=="__main__":
     app.run(debug=True)

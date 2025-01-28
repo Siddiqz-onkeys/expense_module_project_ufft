@@ -85,7 +85,7 @@ function sortTable(columnIndex, header) {
 }
 let del_id = 0;
 
-function verify_age(user_id, expense_id) {
+function verify_age(expense_id) {
     fetch(`/verify_major`) // Use the correct endpoint
         .then(response => {
             if (!response.ok) {
@@ -98,7 +98,6 @@ function verify_age(user_id, expense_id) {
             const deleteConfirmationSection = document.getElementById("deleteConfirmationSection");
             if (data.is_major) {
                 del_id = expense_id; // Set global variable
-                console.log(del_id)
                 deleteConfirmationSection.style.display = "block"; // Show confirmation dialog
                 
             } else {
@@ -112,17 +111,25 @@ function verify_age(user_id, expense_id) {
 }
 
 function deletion_f() {
-    console.log("deletE_f",del_id)
-    const form = document.getElementById('deleteConfirmationSection');
-    form.action = `/delete_expense/${del_id}`; // Dynamically set the form action
-    form.submit()
-
-    const deleteMessage = document.getElementById("deleteMessage");
-    deleteMessage.style.display = "block";
-    deleteMessage.style.animation = "none"; // Reset animation
-    void deleteMessage.offsetWidth; // Trigger reflow
-    deleteMessage.style.animation = "showHide 1.5s ease-in-out";
-    
+    console.log(del_id)
+    fetch(`/delete_expense/${del_id}`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json(); // Parse the JSON response
+    })
+    .then(data =>{
+        snackbarForm=document.getElementById('snackbarForm');
+        console.log(data.isdeleted)
+        if (data.isdeleted){
+            snackbarForm.style,display='block';
+            snackbarForm.style.animation = "none"; // Reset animation
+            void snackbarForm.offsetWidth; // Trigger reflow
+            snackbarForm.style.animation = "showHide 4s ease-in-out";          
+        }
+    })
+            
 }
 
 
@@ -130,80 +137,29 @@ function close_delete(){
     document.getElementById('deleteConfirmationSection').style.display='none';
 }
 
+function show_rec_tab(){
+    curr_state = document.getElementById('recc_exps').style.display
+    if (curr_state=='block'){
+        document.getElementById('recc_exps').style.display='none';
+    }else{
+        document.getElementById('recc_exps').style.display='block';
+    }
+    }
 
 
-let lastDeletedExpense = null; // Store the last deleted expense ID
+    let rec_id_ = null;
 
-        function deleteExpense(expenseId, button) {
-            // Perform the deletion via AJAX
-            fetch(`/delete_expense/${expenseId}`, {
-                method: 'POST',
-            })
-            .then(response => {
-                if (response.ok) {
-                    lastDeletedExpense = expenseId; // Store the deleted expense ID
-                    document.getElementById('undoSection').style.display = 'block'; // Show the undo section
-                    button.closest('tr').style.display = 'none'; // Hide the row
+function load_rec_to_exp(rec_id){
+    rec_id_=rec_id
+    document.getElementById('rec_exp_conf_div').style.display='block';
+}
 
-                    // Set a timeout to automatically hide the undo option after a few seconds
-                    setTimeout(() => {
-                        document.getElementById('undoSection').style.display = 'none';
-                        lastDeletedExpense = null; // Clear the last deleted expense
-                    }, 5000); // 5 seconds
-                } else {
-                    console.error('Failed to delete expense');
-                }
-            });
-        }
-
-        function undoDeletion() {
-            if (lastDeletedExpense) {
-                // Logic to restore the deleted expense
-                fetch(`/restore_expense/${lastDeletedExpense}`, {
-                    method: 'POST',
-                })
-                .then(response => {
-                    if (response.ok) {
-                        // Show the row again (you may need to fetch the data again)
-                        const row = document.querySelector(`tr[data-expense-id="${lastDeletedExpense}"]`);
-                        if (row) {
-                            row.style.display = ''; // Show the row again
-                        }
-
-                        // Hide the undo section
-                        document.getElementById('undoSection').style.display = 'none';
-                        lastDeletedExpense = null; // Clear the last deleted expense
-                    } else {
-                        console.error('Failed to restore expense');
-                    }
-                });
-            }
-        }
-
-
-        function show_rec_tab(){
-            curr_state = document.getElementById('recc_exps').style.display
-            if (curr_state=='block'){
-             document.getElementById('recc_exps').style.display='none';
-            }else{
-             document.getElementById('recc_exps').style.display='block';
-            }
-         }
-        
-        
-         let rec_id_ = null;
-        
-        function load_rec_to_exp(rec_id){
-            rec_id_=rec_id
-            document.getElementById('rec_exp_conf_div').style.display='block';
-        }
-        
-        function add_rec_to_exp(){
-            const form = document.getElementById('rec_exp_conf');
-            if (rec_id_ !== null) {
-                form.action = `/add_rec_to_exp/${rec_id_}`;
-            }
-        }
+function add_rec_to_exp(){
+    const form = document.getElementById('rec_exp_conf');
+    if (rec_id_ !== null) {
+        form.action = `/add_rec_to_exp/${rec_id_}`;
+    }
+}
 
 function overview(){
     const form=document.getElementById('interval-selection')

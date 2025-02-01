@@ -76,7 +76,7 @@ button:hover {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
-#add_expense, #edit_expense, #sorting_filtering, #new_rec_form, #recc_exps,#edit_menu,#add_amount_form,#interval-selection {
+#add_expense, #edit_expense, #sorting_filtering, #new_rec_form, #recc_exps,#edit_menu,#add_amount_form,#interval-selection,#rec_exp_conf_div {
     padding: 50px;
     margin-top: 10px;
     border-radius: 15px;
@@ -168,18 +168,61 @@ a{
 i:hover {
     color: #FF0000; /* Red for icons */
 }
+#deleteMessage{
+    color:red;
+}
+#undoSuccess,#new_exp{
+    color:rgb(180, 168, 4);
+}
+ 
+@keyframes bounceInRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-10px);
+        opacity: 1;
+    }
+    80% {
+        transform: translateX(5px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
 
-#deleteMessage, #ageMessage {
-    font-size: 1rem;
+@keyframes fadeOutRight {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+ #undoSuccess ,#new_exp{
+    position: fixed;
+    top: 15%;
+    right: 20px;
+    background-color: #333;
+    font-size: 0.9rem;
     font-weight: bold;
-    background-color: #D8C4B6; /* Light cream */
-    color: red;
-    padding: 20px;
-    border: 1px solid #16423C; /* Dark green border */
+    padding: 10px 20px;
     border-radius: 10px;
+    border: 1px solid #16423C;
+    opacity: 0;
     width: 320px;
     text-align: center;
-    display: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    animation: bounceInRight 3s ease-out forwards;
+}
+
+.message.fade-out {
+    animation: fadeOutRight 0.5s ease-in forwards;
 }
 
 .summary-info {
@@ -246,3 +289,31 @@ i:hover {
         transform: translateY(-100%) translateX(-10%);
     }
 }
+
+.snackbar {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 16px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 250px;
+    box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+    opacity: 0;
+    animation: bounceInRight 5s ease-out forwards;
+}
+
+.snackbar button {
+    background: none;
+    border: none;
+    color: #ffcc00;
+    font-weight: bold;
+    margin-left: 10px;
+    cursor: pointer;
+}
+

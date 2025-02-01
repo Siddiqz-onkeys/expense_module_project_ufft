@@ -1,6 +1,17 @@
 var id=0;
 var amount=0;
 var major;
+window.onload = function() {
+    let messageBox = document.getElementById("messageBox");
+    if (messageBox) {
+        setTimeout(() => {
+            messageBox.classList.add("fade-out"); // Apply fade-out animation
+        }, 3000); // Disappear after 3 seconds
+    }
+};
+
+
+
 function showEditMenu(expense_id,expense_amount){
     document.getElementById('edit_menu').style.display='block';
 
@@ -83,58 +94,51 @@ function sortTable(columnIndex, header) {
         }
     });
 }
-let del_id = 0;
+let del_id = null; // Variable to store the expense ID to be deleted
 
-function verify_age(expense_id) {
-    fetch(`/verify_major`) // Use the correct endpoint
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json(); // Parse the JSON response
-        })
-        .then(data => {
-            const ageMessage = document.getElementById("ageMessage");
-            const deleteConfirmationSection = document.getElementById("deleteConfirmationSection");
-            if (data.is_major) {
-                del_id = expense_id; // Set global variable
-                deleteConfirmationSection.style.display = "block"; // Show confirmation dialog
-                
-            } else {
-                ageMessage.style.display = "block";
-                ageMessage.style.animation = "none"; // Reset animation
-                void ageMessage.offsetWidth; // Trigger reflow
-                ageMessage.style.animation = "showHide 1.5s ease-in-out";
-            }
-        })
-        .catch(error => console.error("Error:", error));
+// Function to show the delete confirmation form
+function delete_expense(expense_id) {
+    del_id = expense_id; // Store the expense ID to be deleted
+    document.getElementById("deleteConfirmationSection").style.display = "block"; // Show confirmation form
 }
 
+// Function to actually delete the expense
 function deletion_f() {
-    console.log(del_id)
-    fetch(`/delete_expense/${del_id}`)
+    // Perform the deletion using the stored del_id
+    const form =document.getElementById('deleteConfirmationSection')
+    form.action=`/delete_expense/${del_id}`
+    form.submit()
+    
+
+    // Close the confirmation form
+    close_delete();
+}
+
+function rollbackDeletion() {
+    fetch('/rollback_deletion', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
     .then(response => {
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error('Network response was not ok');
         }
-        return response.json(); // Parse the JSON response
+        return response.json();
     })
-    .then(data =>{
-        snackbarForm=document.getElementById('snackbarForm');
-        console.log(data.isdeleted)
-        if (data.isdeleted){
-            snackbarForm.style,display='block';
-            snackbarForm.style.animation = "none"; // Reset animation
-            void snackbarForm.offsetWidth; // Trigger reflow
-            snackbarForm.style.animation = "showHide 4s ease-in-out";          
-        }
+    .then(data => {
+        console.log('Success:', data);
     })
-            
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
-
-function close_delete(){
-    document.getElementById('deleteConfirmationSection').style.display='none';
+// Function to close the delete confirmation form if the user clicks "Cancel"
+function close_delete() {
+    document.getElementById("deleteConfirmationSection").style.display = "none";
 }
 
 function show_rec_tab(){
@@ -146,8 +150,7 @@ function show_rec_tab(){
     }
     }
 
-
-    let rec_id_ = null;
+let rec_id_ = null;
 
 function load_rec_to_exp(rec_id){
     rec_id_=rec_id
@@ -224,5 +227,4 @@ function updateArrowStates(index, totalCards) {
 document.addEventListener('DOMContentLoaded', () => {
     showCard(currentCardIndex);
 });
-
 

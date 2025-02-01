@@ -15,6 +15,24 @@
         
         <header> <h1 id="header_text"> UNIFIED FAMILY FINANCE TRACKER</h1></header>
 
+        <!-- #### REPLACE THE USER SECTION BELOW THIS CODE WITH THE FOLLOWING CODE 
+            {% if user_role=='hof'%}
+            <form id="user-selection" method="POST" action="{{url_for('expense.index')}}" enctype="multipart/form">
+                <label> User: </label>
+                <select id="user_id" name="user_id">
+                    <option value="" disabled selected> -- Select user --- </option>
+                    {% for user in users %}
+                    <option value={{ user.user_id}}>{{ user.user_name}}</option>
+                    {% endfor %}
+                </select>
+                <button > FETCH ALL </button>
+            </form>
+            <button > My Expenses </button>
+
+            {% endif %}
+        
+        -->
+
         <!-- ##### user selection section ###### -->
         <form id="user-selection" method="POST" action="/" enctype="multipart/form">
             <label> User: </label>
@@ -233,8 +251,8 @@
                                         <i id="rec_exp_items" class="fas fa-edit"></i>                               
                                         {{exp.description}} 
                                         {{exp.amount}}
-                                        <i id="rec_exp_items" class="fas fa-trash" onclick="verify_age({{ exp.user_id }},{{ exp.rec_id }})"></i>
-                                        <i id="rec_exp_items" class="fas fa-add" onclick="load_rec_to_exp({{exp.rec_id}})"></i>
+                                        <i id="rec_exp_items" class="fas fa-trash" onclick="verify_age('{{ exp.user_id }}','{{ exp.rec_id }}')"></i>
+                                        <i id="rec_exp_items" class="fas fa-add" onclick="load_rec_to_exp('{{exp.rec_id}}')"></i>
                                         <br><br>
                                 {% endfor %}
                             <button type='button' onclick= " document.getElementById('new_rec_form').style.display='block' " > ADD NEW RECURRING EXPENSE</button>
@@ -389,24 +407,22 @@
                     </div>
 
                     <!-- DELETE CONFIRMATION SECTION -->
-                    <form id="deleteConfirmationSection" style="display:none" method="GET" action="">
-
+                    <form id="deleteConfirmationSection" style="display:none" action="">
                         <p>Are you sure you want to delete this record?</p>
-
-                        <button type="button" class="confirm_btn" onclick="deletion_f()">Confirm</button>
-
-                        <button onclick="document.getElementById('deleteConfirmationSection').style.display='none'" type="button">Cancel</button>
+                        <button type="button" class="confirm_btn" onclick="deletion_f()" >Confirm</button>
+                        <button type="button" onclick="close_delete()">Cancel</button>
                     </form>
 
-                    <!--<div class="undo-section">
-                        <form id="snackbarForm" action="/rollback_deletion" enctype="multipart/form">
-                            <span>File moved to bin</span>
-                            <button type="submit" id="undoAction">Undo</button>
-                            <button type="button" id="closeSnackbar">×</button>
-                        </form>
-                    </div>-->
-                    
-                </div>
+                    {% if status_delete %}
+                    <!-- Snackbar for Undo -->
+                    <form id="snackbarForm" class="snackbar" action="/rollback_deletion" method="POST">
+                        <span>Expense deleted</span>
+                        <button type="submit">Undo Delete 🤷‍♂️</button>
+                        <button type="button" onclick="document.getElementById('snackbarForm').style.display='none'">×</button>
+                    </form>
+                    {% endif %}
+
+        </div>
                                 
                 <!-- ###### DEFAULT VIEW OF THE TABLE #####-->
                 <div class="default_view_table">
@@ -436,7 +452,7 @@
                             <div class="exp_id" style="display:none">{{ expense.expense_id}}</div>
                             <tr>                    
                                 <td>
-                                    <i class="fas fa-edit" onclick="showEditMenu({{ expense.expense_id}} ,{{expense.amount}})" ></i>                                
+                                    <i class="fas fa-edit" onclick="showEditMenu('{{ expense.expense_id}}' ,'{{expense.amount}}')" ></i>                                
                                 </td>
                                 <td>{{expense.date_in}}</td>                    
                                 <td>{{expense.category}}</td>
@@ -457,20 +473,30 @@
                                     ## No Receipt ##
                                     {% endif %}
                                 </td>
-                                <td>                              
-                                <i class="fas fa-trash" onclick="verify_age({{ expense.expense_id }})"></i>
+                                <td>    
+                                {% if major %}                          
+                                <!-- Trash Icon to directly trigger the deletion -->                            
+                                <i class="fas fa-trash" onclick="delete_expense('{{ expense.expense_id }}')"></i>
+                                {% endif %}
+
                                 </td>
                             </tr>
-                            <!-- ####### POP UP MESSAGES ####### -->                            
-                                <div id="pop-up messages">
-                                    <div id="ageMessage" > Action Restricted, Since You are a minor </div>
-                                    <div id="deleteMessage"> Record Deleteion Successfull!!! </div>
-                                </div>
+                            
                                                             
                             </div>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <!-- ####### POP UP MESSAGES ####### -->                            
+                <div id="pop-up messages" .style.display="block">
+                    {% if status_undo %}
+                        <div id="undoSuccess" class="message">Record Restored 👍</div>
+                    {% elif new_exp %}
+                        <div id="new_exp" class="message"> New Expense added 👌 </div> 
+                    {% endif %}
+
                 </div>
             </div>
         </div>

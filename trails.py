@@ -30,7 +30,25 @@ def sendEmail(to, sub, msg):
 connect_=mysql.connector.connect(**db_config)
 cursor=connect_.cursor()
 curr_date=datetime.now()
-cursor.execute("SELECT users.user_name,users.email,recc_expenses.amount,recc_expenses.description,recc_expenses.start_date,recc_expenses.end_date FROM users JOIN recc_expenses on users.user_id=recc_expenses.user_id WHERE start_date BETWEEN CURDATE() AND CURDATE() + INTERVAL 3 DAY;")
+cursor.execute("""
+SELECT 
+    users.user_name, 
+    users.email, 
+    recc_expenses.amount, 
+    recc_expenses.description,
+    recc_expenses.start_date,
+    recc_expenses.end_date 
+FROM 
+    users 
+JOIN 
+    recc_expenses 
+ON 
+    users.user_id = recc_expenses.user_id 
+WHERE 
+    CONCAT(MONTH(start_date), '-', DAY(start_date)) 
+    BETWEEN CONCAT(MONTH(CURDATE()), '-', DAY(CURDATE())) 
+    AND CONCAT(MONTH(CURDATE()), '-', DAY(CURDATE() + INTERVAL 3 DAY));
+""")
 res = cursor.fetchall()
 
 recs=[{
@@ -46,11 +64,12 @@ subject="remainder for the upcoming reccuring expense"
  ########################### SHOULD CHECK IF THERE IS AN END DATE -- IF THERE IS AN END DATE THEN CHECK IF THE END DATE IS LESS THAN THE CURRENT DATE AND SEND THE MAIL IF ITS COMMING IN NEXT 3 DAYS
  ########################### ELSE JUST SEND THE MAIL TO THE RECURRING EXPENSES COMMING IN THE NEXT THREE DAYS
 for exp in recs:
-    msg=(
-        f"Hey {exp['user_name']},\n\n"
-        f"This is just a remainder for your upcoming recurring expense:\n"
-        f"Expense: {exp['description']}\n"
-        f"Amount: ${exp['amount']}\n"
-        f"Regards,\n Expense Management Team,\n Famora"
-    )
-    sendEmail(exp['email'],subject,msg)
+    if (exp['end_date'] and exp['end_date']<curr_date.date() )or not exp['user_name']:        
+        msg=(
+            f"Hey {exp['user_name']},\n\n"
+            f"This is just a remainder for your upcoming recurring expense:\n"
+            f"Expense: {exp['description']}\n"
+            f"Amount: ${exp['amount']}\n"
+            f"Regards,\n Expense Management Team,\n Famora"
+        )
+        sendEmail(exp['email'],subject,msg)

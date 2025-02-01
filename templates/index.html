@@ -447,44 +447,48 @@
                             </tr>
                         </thead> 
                         <tbody>
-                            {% for expense in expenses %}
+                            {% if isfiltered and not expenses%}
+                            <h3 style="color:red"> NO EXPENSES FOUND WITH THE APPLIED FILTERS </h3>
+                            {% else %}
+                                {% for expense in expenses %}
 
-                            <div class="exp_id" style="display:none">{{ expense.expense_id}}</div>
-                            <tr>                    
-                                <td>
-                                    <i class="fas fa-edit" onclick="showEditMenu('{{ expense.expense_id}}' ,'{{expense.amount}}')" ></i>                                
-                                </td>
-                                <td>{{expense.date_in}}</td>                    
-                                <td>{{expense.category}}</td>
-                                <td>{{expense.amount}}</td>
-                                <td>
-                                    {% if expense.desc %}
-                                        {{expense.desc}}
-                                    {% else %}
-                                    ## No Description ##
+                                <div class="exp_id" style="display:none">{{ expense.expense_id}}</div>
+                                <tr>                    
+                                    <td>
+                                        <i class="fas fa-edit" onclick="showEditMenu('{{ expense.expense_id}}' ,'{{expense.amount}}')" ></i>                                
+                                    </td>
+                                    <td>{{expense.date_in}}</td>                    
+                                    <td>{{expense.category}}</td>
+                                    <td>{{expense.amount}}</td>
+                                    <td>
+                                        {% if expense.desc %}
+                                            {{expense.desc}}
+                                        {% else %}
+                                        ## No Description ##
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if expense.receipt %}
+                                        <a href="{{ url_for('static', filename='uploads/receipts/' + expense.receipt) }}" target="_blank">
+                                            View Receipt
+                                        </a>
+                                        {% else %}
+                                        ## No Receipt ##
+                                        {% endif %}
+                                    </td>
+                                    <td>    
+                                    {% if major %}                          
+                                    <!-- Trash Icon to directly trigger the deletion -->                            
+                                    <i class="fas fa-trash" onclick="delete_expense('{{ expense.expense_id }}')"></i>
                                     {% endif %}
-                                </td>
-                                <td>
-                                    {% if expense.receipt %}
-                                    <a href="{{ url_for('static', filename='uploads/receipts/' + expense.receipt) }}" target="_blank">
-                                        View Receipt
-                                    </a>
-                                    {% else %}
-                                    ## No Receipt ##
-                                    {% endif %}
-                                </td>
-                                <td>    
-                                {% if major %}                          
-                                <!-- Trash Icon to directly trigger the deletion -->                            
-                                <i class="fas fa-trash" onclick="delete_expense('{{ expense.expense_id }}')"></i>
-                                {% endif %}
 
-                                </td>
-                            </tr>
-                            
-                                                            
-                            </div>
-                            {% endfor %}
+                                    </td>
+                                </tr>
+                                
+                                                                
+                                </div>
+                                {% endfor %}
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

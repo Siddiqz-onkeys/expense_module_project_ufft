@@ -436,25 +436,25 @@ def filter_expenses():
     params = [curr_user]
     
     if category:
-        query+="c.name=%s AND"
+        query+="AND c.name=%s "
         params+=[category]
     if min_amount and max_amount:
-        query+=" e.amount BETWEEN %s AND %s AND"
+        query+="AND e.amount BETWEEN %s AND %s "
         params+=[min_amount,max_amount]
     elif min_amount:
-        query+=" e.amount>=%s AND"
+        query+="AND e.amount>=%s "
         params+=[min_amount]
     elif max_amount:
-        query+=" e.amount<%s AND"
+        query+="AND e.amount<%s "
         params+=[max_amount]
         
     if desc:
-        query+=" e.description IS NOT NULL AND"
+        query+="AND e.description IS NOT NULL "
     if receipt:
-        query+=" e.receipt IS NOT NULL AND"
+        query+="AND e.receipt IS NOT NULL "
         
 
-    query=query[:-4]
+    
     cursor.execute(query, tuple(params))
     filtered_expenses = cursor.fetchall()
     
@@ -469,12 +469,12 @@ def filter_expenses():
         }
         for exp in filtered_expenses
     ]
-    
+    isfiltered=True
     current_date = datetime.now().strftime('%Y-%m-%d')
     ###### ADD { user_role=curr_user_role,user_name=curr_user_name } WHILE INTGRATING 
-    return render_template('index.html',expenses=filtered_expenses,user_id=curr_user,users=get_users(),major=verify_major(),
+    return render_template('index.html',expenses=filtered_expenses_list,user_id=curr_user,users=get_users(),major=verify_major(),
                 reccur_exps=get_rec_exps(),
-                categories=get_cats(),
+                categories=get_cats(),isfiltered=isfiltered,
                 max_date=current_date)
 
 
